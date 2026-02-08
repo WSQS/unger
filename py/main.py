@@ -95,11 +95,13 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str):
                     if not subgrammar.rule:
                         break
                     group_grammar.rule += subgrammar.rule
-                    new_rs.append(f"{r}_{ts.start_index + offset}_{len(substring)}")
                 else:
                     if len(substring) != 1 or substring[0] != r:
                         break
-                    new_rs.append(r)
+                    group_grammar.rule.append(
+                        (f"{r}_{ts.start_index + offset}_{len(substring)}", [r])
+                    )
+                new_rs.append(f"{r}_{ts.start_index + offset}_{len(substring)}")
                 offset += len(substring)
             else:
                 # the group is match successfully
