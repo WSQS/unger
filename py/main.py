@@ -15,6 +15,32 @@ class Grammar:
         default_factory=list[tuple[str, list[str]]]
     )
     start_symbol: str = field(default_factory=str)
+    non_terminal_min_len: dict[str, int] = field(default_factory=dict[str, int])
+
+    def precompute(self):
+        self.non_terminal_min_len.clear()
+        update = True
+        while update:
+            update = False
+            for l, rs in self.rule:
+                length = 0
+                for r in rs:
+                    if is_non_terminal(r):
+                        if r not in self.non_terminal_min_len:
+                            length = -1
+                            break
+                        length += self.non_terminal_min_len[r]
+                    else:
+                        length += 1
+                if length == -1:
+                    continue
+                if (
+                    l not in self.non_terminal_min_len
+                    or self.non_terminal_min_len[l] > length
+                ):
+                    update = True
+                    self.non_terminal_min_len[l] = length
+        # TODO: we need to clean up rule to avoid excetion later.
 
 
 @dataclass
@@ -53,17 +79,20 @@ def parse_grammar(s_grammer: str):
     return grammar
 
 
-def group_into(n_element: int, n_group: int) -> Generator[list[int], Any, None]:
-    if n_element < 0 or n_group < 0:
-        msg = f"n_element = {n_element} < 0 or n_group = {n_group} < 0"
+def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, None]:
+    if n_element < 0:
+        msg = f"n_element = {n_element} < 0"
         raise ValueError(msg)
-    if n_group == 0:
+    if len(groups) == 0:
+        if n_element == 0:
+            # for the epsilon rule.
+            yield []
         return
-    if n_group == 1:
+    if len(groups) == 1:
         yield [n_element]
         return
-    for i in range(1, n_element + 1):
-        for l in group_into(n_element - i, n_group - 1):
+    for i in range(groups[0], n_element + 1):
+        for l in group_into(n_element - i, groups[1:]):
             yield [i] + l
 
 
@@ -73,7 +102,16 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str):
         if l != symbol:
             continue
         print(f"rule:{l, rs}")
-        for group_info in group_into(len(ts.token), len(rs)):
+        groups: list[int] = []
+        for r in rs:
+            if is_non_terminal(r):
+                if r not in g.non_terminal_min_len:
+                    msg = f"Can't get min length for non terminal: {r!r}"
+                    raise ValueError(msg)
+                groups.append(g.non_terminal_min_len[r])
+            else:
+                groups.append(1)
+        for group_info in group_into(len(ts.token), groups):
             print("group_info", group_info)
             group_grammar = Grammar()
             ts_copy = ts.token[:]
@@ -105,7 +143,12 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str):
                 offset += len(substring)
             else:
                 # the group is match successfully
+                if not new_rs:
+                    # In output grammar, the non terminal output a empty terminal 
+                    new_rs.append(f"_{ts.start_index}_{len(ts.token)}")
+                    group_grammar.rule.append((f"_{ts.start_index}_{len(ts.token)}",["epsilon"]))
                 result.rule += group_grammar.rule
+
                 result.rule.append((f"{l}_{ts.start_index}_{len(ts.token)}", new_rs))
     return result
 
@@ -124,6 +167,7 @@ def main():
     with open(args.grammar, "r", encoding="utf-8") as f:
         s_g = f.read()
     g = parse_grammar(s_g)
+    g.precompute()
     print(g)
     with open(args.input, "r", encoding="utf-8") as f:
         s_i = f.read()

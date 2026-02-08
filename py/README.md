@@ -23,11 +23,11 @@ This program using a simple tokenizer, each token is split by any whitespace cha
 
 ## Todo
 
-- $\epsilon$ support
 - Loop detect
 
 ## Changelog
 
 ### 0.1.0
 
-- Implement a naive Unger's method 
+- Implement a naive Unger's method
+- $\epsilon$ rule support
