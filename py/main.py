@@ -1,4 +1,5 @@
 import argparse
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Generator
 
@@ -49,6 +50,11 @@ class Sentence:
     start_index: int = field(default=1)
 
 
+@dataclass
+class Context:
+    substring_stack: list[str] = field(default_factory=list[str])
+
+
 def parse_grammar(s_grammer: str):
     grammar = Grammar()
     for l_id, lg in enumerate(s_grammer.splitlines(), start=1):
@@ -96,13 +102,17 @@ def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, N
             yield [i] + l
 
 
-def parse_substring(g: Grammar, ts: Sentence, symbol: str):
+def parse_substring(g: Grammar, ts: Sentence, symbol: str, context:Context):
     result = Grammar()
     for l, rs in g.rule:
         if l != symbol:
             continue
         print(f"rule:{l, rs}")
         groups: list[int] = []
+        if f"{l}_{ts.start_index}_{len(ts.token)}" in context.substring_stack:
+            continue
+        new_context = deepcopy(context)
+        new_context.substring_stack.append(f"{l}_{ts.start_index}_{len(ts.token)}")
         for r in rs:
             if is_non_terminal(r):
                 if r not in g.non_terminal_min_len:
@@ -128,7 +138,7 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str):
             for r, substring in zip(rs, substrings):
                 if is_non_terminal(r):
                     subgrammar = parse_substring(
-                        g, Sentence(substring, ts.start_index + offset), r
+                        g, Sentence(substring, ts.start_index + offset), r, new_context
                     )
                     if not subgrammar.rule:
                         break
@@ -154,7 +164,7 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str):
 
 
 def parse(g: Grammar, ts: Sentence):
-    return parse_substring(g, ts, g.start_symbol)
+    return parse_substring(g, ts, g.start_symbol, Context())
 
 
 def main():
