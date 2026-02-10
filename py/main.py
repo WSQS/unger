@@ -104,15 +104,15 @@ def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, N
 
 def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
     result = Grammar()
+    if f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.substring_stack:
+        return result
+    new_context = deepcopy(context)
+    new_context.substring_stack.append(f"{l}_{ts.start_index}_{len(ts.token)}")
     for l, rs in g.rule:
         if l != symbol:
             continue
         print(f"rule:{l, rs}")
         groups: list[int] = []
-        if f"{l}_{ts.start_index}_{len(ts.token)}" in context.substring_stack:
-            continue
-        new_context = deepcopy(context)
-        new_context.substring_stack.append(f"{l}_{ts.start_index}_{len(ts.token)}")
         for r in rs:
             if is_non_terminal(r):
                 if r not in g.non_terminal_min_len:
