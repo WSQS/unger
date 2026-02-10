@@ -102,7 +102,7 @@ def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, N
             yield [i] + l
 
 
-def parse_substring(g: Grammar, ts: Sentence, symbol: str, context:Context):
+def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
     result = Grammar()
     for l, rs in g.rule:
         if l != symbol:
@@ -154,9 +154,11 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str, context:Context):
             else:
                 # the group is match successfully
                 if not new_rs:
-                    # In output grammar, the non terminal output a empty terminal 
+                    # In output grammar, the non terminal output a empty terminal
                     new_rs.append(f"_{ts.start_index}_{len(ts.token)}")
-                    group_grammar.rule.append((f"_{ts.start_index}_{len(ts.token)}",["epsilon"]))
+                    group_grammar.rule.append(
+                        (f"_{ts.start_index}_{len(ts.token)}", ["epsilon"])
+                    )
                 result.rule += group_grammar.rule
 
                 result.rule.append((f"{l}_{ts.start_index}_{len(ts.token)}", new_rs))
