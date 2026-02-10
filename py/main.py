@@ -1,5 +1,5 @@
 import argparse
-from copy import deepcopy
+from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, Generator
 
@@ -53,6 +53,7 @@ class Sentence:
 @dataclass
 class Context:
     substring_stack: list[str] = field(default_factory=list[str])
+    unavailable_substring: list[str] = field(default_factory=list[str])
 
 
 def parse_grammar(s_grammer: str):
@@ -104,10 +105,11 @@ def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, N
 
 def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
     result = Grammar()
-    if f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.substring_stack:
+    if f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.substring_stack or f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.unavailable_substring:
         return result
-    new_context = deepcopy(context)
-    new_context.substring_stack.append(f"{l}_{ts.start_index}_{len(ts.token)}")
+    new_context = copy(context)
+    new_context.substring_stack = context.substring_stack[:]
+    new_context.substring_stack.append(f"{symbol}_{ts.start_index}_{len(ts.token)}")
     for l, rs in g.rule:
         if l != symbol:
             continue
@@ -160,8 +162,10 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
                         (f"_{ts.start_index}_{len(ts.token)}", ["epsilon"])
                     )
                 result.rule += group_grammar.rule
-
                 result.rule.append((f"{l}_{ts.start_index}_{len(ts.token)}", new_rs))
+                continue
+    if not result.rule:
+        new_context.unavailable_substring.append(f"{symbol}_{ts.start_index}_{len(ts.token)}")
     return result
 
 
