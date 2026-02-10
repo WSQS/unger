@@ -23,7 +23,7 @@ This program using a simple tokenizer, each token is split by any whitespace cha
 
 ## Todo
 
-- Avoid Substring recalculate
+- Avoid positive Substring
 
 ## Changelog
 
@@ -32,3 +32,4 @@ This program using a simple tokenizer, each token is split by any whitespace cha
 - Implement a naive Unger's method
 - $\epsilon$ rule support
 - Using substring stack to avoid Loop
+- Avoid Negative substring recursive check

@@ -105,7 +105,10 @@ def group_into(n_element: int, groups: list[int]) -> Generator[list[int], Any, N
 
 def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
     result = Grammar()
-    if f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.substring_stack or f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.negative_substrings:
+    if (
+        f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.substring_stack
+        or f"{symbol}_{ts.start_index}_{len(ts.token)}" in context.negative_substrings
+    ):
         return result
     new_context = copy(context)
     new_context.substring_stack = context.substring_stack[:]
@@ -165,7 +168,9 @@ def parse_substring(g: Grammar, ts: Sentence, symbol: str, context: Context):
                 result.rule.append((f"{l}_{ts.start_index}_{len(ts.token)}", new_rs))
                 continue
     if not result.rule:
-        new_context.negative_substrings.append(f"{symbol}_{ts.start_index}_{len(ts.token)}")
+        new_context.negative_substrings.append(
+            f"{symbol}_{ts.start_index}_{len(ts.token)}"
+        )
     return result
 
 
